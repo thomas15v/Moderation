@@ -9,24 +9,31 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-public class SqlUserEntry implements UserInfo {
+public class SQLUser implements UserInfo {
 
-    private int id;
     private UUID uniqueId;
     private String name;
     private Date firstJoined;
     private Date lastJoined;
-    private List<SqlPunishmentEntry> banEntries = new ArrayList<SqlPunishmentEntry>();
+    private List<SQLPunishment> banEntries = new ArrayList<SQLPunishment>();
 
-    public SqlUserEntry(ResultSet resultSet, User user) throws SQLException {
-        this(resultSet);
+    public SQLUser(User user) throws SQLException {
         this.uniqueId = user.getUniqueId();
         this.name = user.getName();
+        this.firstJoined = new Date();
+        this.lastJoined = new Date();
     }
 
-    public SqlUserEntry(ResultSet resultSet) throws SQLException {
+    public SQLUser(ResultSet resultSet, User user) throws SQLException {
+        this(resultSet, user.getUniqueId());
+
+    }
+
+    public SQLUser(ResultSet resultSet, UUID uniqueId) throws SQLException {
+        this.name = resultSet.getString("lastname");
         this.firstJoined = resultSet.getDate("firstJoined");
-        this.lastJoined = resultSet.getDate("lastJoined");
+        this.lastJoined = resultSet.getDate("lastSeen");
+        this.uniqueId = uniqueId;
     }
 
     @Override
@@ -49,7 +56,8 @@ public class SqlUserEntry implements UserInfo {
         return lastJoined;
     }
 
-    public void setLastJoined(Date lastJoined) {
-        this.lastJoined = lastJoined;
+    @Override
+    public void setLastJoined() {
+        lastJoined = new Date();
     }
 }

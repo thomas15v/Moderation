@@ -26,47 +26,55 @@ public class SQLStorage implements Storage {
 
     @Override
     public Optional<UserInfo> getUser(User user){
+        Optional<UserInfo> userInfo = getUser(user.getUniqueId());
+        if (!userInfo.isPresent()) {
+            insertUserInfo(user);
+            return getUser(user);
+        }
+        return userInfo;
+    }
+
+    @Override
+    public Optional<UserInfo> getUser(UUID id){
         try {
             PreparedStatement statement = dataSource.getConnection().prepareStatement(SELECT_USER_UUID);
-            statement.setString(1, user.getUniqueId().toString());
+            statement.setString(1, id.toString());
             ResultSet resultSet = statement.executeQuery();
-            if (!resultSet.next()) {
-                insertUserInfo(user);
-                return getUser(user);
-            }else {
-                UserInfo userInfo = new SqlUserEntry(resultSet, user);
+            if (resultSet.next()) {
+                UserInfo userInfo = new SQLUser(resultSet, id);
                 statement.close();
-                updateUserInfo(userInfo);
                 return Optional.of(userInfo);
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
         return Optional.absent();
     }
 
-    @Override
-    public Optional<UserInfo> getUser(UUID id){
-        return null;
-    }
-
-    private final static String SELECT_USER_NAME = "select * from Users where name='%s'";
+    private final static String SELECT_USER_NAME = "select * from Users where lastname=?";
 
     @Override
     public Optional<UserInfo> getUser(String name){
-        return null;
+        try {
+            PreparedStatement statement = dataSource.getConnection().prepareStatement(SELECT_USER_NAME);
+            statement.setString(1, name);
+            statement.execute();
+            statement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return Optional.absent();
     }
 
-    private final static String UPDATE_USER = "update Users set lastname=?, lastJoined=now() where uniqueId=?";
+    private final static String UPDATE_USER = "update Users set lastname=?, lastSeen=? where uniqueId=?";
 
     @Override
     public void updateUserInfo(UserInfo userInfo) {
-        PreparedStatement statement = null;
         try {
-            statement = dataSource.getConnection().prepareStatement(UPDATE_USER);
+            PreparedStatement statement = dataSource.getConnection().prepareStatement(UPDATE_USER);
             statement.setString(1, userInfo.getName());
-            statement.setString(2, userInfo.getUniqueId().toString());
+            statement.setString(3, userInfo.getUniqueId().toString());
+            statement.setTimestamp(2, new Timestamp(userInfo.getLastJoined().getTime()));
             statement.executeUpdate();
             statement.close();
         } catch (SQLException e) {
@@ -74,18 +82,18 @@ public class SQLStorage implements Storage {
         }
     }
 
-    private final static String INSERT_USER = "insert into Users (uniqueId, lastname) values(?,?)";
+    private final static String INSERT_USER = "insert into Users (uniqueId, lastname) values(?,?) on DUPLICATE key update lastname=?";
 
     private void insertUserInfo(User userInfo){
         try {
             PreparedStatement statement = dataSource.getConnection().prepareStatement(INSERT_USER);
             statement.setString(1, userInfo.getUniqueId().toString());
             statement.setString(2, userInfo.getName());
+            statement.setString(3, userInfo.getName());
             statement.executeUpdate();
             statement.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
-
 }

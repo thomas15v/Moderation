@@ -13,6 +13,8 @@ public interface UserInfo {
 
     Date getLastJoined();
 
-
-
+    /**
+     * Sets the lastjoined time to the current time
+     */
+    void setLastJoined();
 }

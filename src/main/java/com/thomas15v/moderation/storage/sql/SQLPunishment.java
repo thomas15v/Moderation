@@ -4,6 +4,6 @@ import com.thomas15v.moderation.storage.PunishmentInfo;
 
 import java.util.UUID;
 
-public class SqlPunishmentEntry implements PunishmentInfo {
+public class SQLPunishment implements PunishmentInfo {
     public UUID playerId;
 }
