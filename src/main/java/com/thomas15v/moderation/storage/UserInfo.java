@@ -1,6 +1,7 @@
 package com.thomas15v.moderation.storage;
 
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 public interface UserInfo {
@@ -16,5 +17,11 @@ public interface UserInfo {
     /**
      * Sets the lastjoined time to the current time
      */
-    void setLastJoined();
+    void resetLastJoined();
+
+    boolean isBanned();
+
+    List<PunishmentInfo> getPunishmentHistory();
+
+    public void punish(PunishmentInfo punishmentInfo);
 }

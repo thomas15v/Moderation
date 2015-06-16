@@ -1,13 +1,19 @@
 package com.thomas15v.moderation.storage.sql;
 
 import com.google.common.base.Optional;
+import com.thomas15v.moderation.storage.PunishmentInfo;
 import com.thomas15v.moderation.storage.Storage;
 import com.thomas15v.moderation.storage.UserInfo;
 import org.spongepowered.api.entity.player.User;
 import org.spongepowered.api.service.sql.SqlService;
 
 import javax.sql.DataSource;
-import java.sql.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class SQLStorage implements Storage {
@@ -41,7 +47,7 @@ public class SQLStorage implements Storage {
             statement.setString(1, id.toString());
             ResultSet resultSet = statement.executeQuery();
             if (resultSet.next()) {
-                UserInfo userInfo = new SQLUser(resultSet, id);
+                UserInfo userInfo = new SQLUser(resultSet, id, this);
                 statement.close();
                 return Optional.of(userInfo);
             }
@@ -95,5 +101,23 @@ public class SQLStorage implements Storage {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    private final static String LIST_PUNISHMENTS = "select * from Punishments where userId=?";
+
+    List<PunishmentInfo> getPunishments(UUID uuid){
+        ArrayList<PunishmentInfo> punishmentInfos = new ArrayList<PunishmentInfo>();
+        try {
+            PreparedStatement statement = dataSource.getConnection().prepareStatement(LIST_PUNISHMENTS);
+            statement.setString(1,uuid.toString());
+            ResultSet resultSet = statement.executeQuery();
+            while (resultSet.next()){
+                punishmentInfos.add(new SQLPunishment(resultSet, this));
+            }
+            statement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return punishmentInfos;
     }
 }
